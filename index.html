@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cramer's Rule Solver</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        label {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+        input[type="number"] {
+            width: 60px;
+            height: 40px;
+            margin: 5px;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        .matrix {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            font-size: 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background: #e7f4e4;
+            border-left: 5px solid #2a7d2a;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .error {
+            background: #f8d7da;
+            border-left: 5px solid #f5c6cb;
+        }
+        .final-answers {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #cce5ff;
+            border: 3px solid #000000;
+            border-radius: 10px;
+            color: #ff0000;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Cramer's Rule Solver</h1>
+        <h3>Number of Variables (n):</h3>
+        <input style="width: 30%; margin-left: 25%; margin-bottom: 20px;" type="number" id="variables" min="2">
+        <button style="width: 20%; margin-left: 5%;" onclick="generateMatrix()">Generate Input Matrix</button>
+        
+        <div id="matrixContainer" class="matrix"></div>
+        <button id="solveButton" onclick="solveUsingCramer()" style="display: none;">Solve Using Cramer's Rule</button>
+        <div id="result" class="result" style="display: none;"></div>
+        <div id="finalAnswers" class="final-answers" style="display: none;"></div>
+    </div>
+
+    <script>
+        function generateMatrix() {
+            const n = parseInt(document.getElementById('variables').value);
+            const matrixContainer = document.getElementById('matrixContainer');
+            const solveButton = document.getElementById('solveButton');
+            const result = document.getElementById('result');
+            const finalAnswers = document.getElementById('finalAnswers');
+
+            if (!n) {
+                alert("Please enter the number of variables.");
+                return;
+            }
+
+            // Clear previous matrix and results
+            matrixContainer.innerHTML = '';
+            result.style.display = 'none';
+            finalAnswers.style.display = 'none';
+
+            // Generate inputs for the matrix
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < n; j++) {
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.placeholder = `a${i + 1}${j + 1}`;
+                    input.id = `a${i + 1}${j + 1}`;
+                    matrixContainer.appendChild(input);
+                }
+
+                // Add input for the constants (b values)
+                const constantInput = document.createElement('input');
+                constantInput.type = 'number';
+                constantInput.placeholder = `b${i + 1}`;
+                constantInput.id = `b${i + 1}`;
+                constantInput.style.borderColor = '#ff9800';
+                matrixContainer.appendChild(constantInput);
+            }
+
+            matrixContainer.style.gridTemplateColumns = `repeat(${n + 1}, 60px)`;
+            solveButton.style.display = 'block';
+        }
+
+        function solveUsingCramer() {
+            const n = parseInt(document.getElementById('variables').value);
+            const resultDiv = document.getElementById('result');
+            const finalAnswersDiv = document.getElementById('finalAnswers');
+
+            // Build matrices
+            const A = [];
+            const B = [];
+            for (let i = 0; i < n; i++) {
+                A[i] = [];
+                for (let j = 0; j < n; j++) {
+                    A[i][j] = parseFloat(document.getElementById(`a${i + 1}${j + 1}`).value);
+                }
+                B[i] = parseFloat(document.getElementById(`b${i + 1}`).value);
+            }
+
+            resultDiv.innerHTML = "<strong>Steps:</strong><br><br>";
+
+            // Step 1: Display Input Matrices
+            resultDiv.innerHTML += "Matrix A (Coefficients):<br>" + formatMatrix(A) + "<br>";
+            resultDiv.innerHTML += "Matrix B (Constants):<br>" + formatMatrix([B]) + "<br><br>";
+
+            // Step 2: Calculate Determinant of A
+            const detA = math.det(A);
+            resultDiv.innerHTML += "Step 1: Calculate Determinant of Matrix A (|A|):<br>";
+            resultDiv.innerHTML += `|A| = ${detA.toFixed(2)}<br><br>`;
+
+            if (detA === 0) {
+                resultDiv.innerHTML += `<div class="error">No unique solution (|A| = 0).</div>`;
+                resultDiv.style.display = 'block';
+                finalAnswersDiv.style.display = 'none';
+                return;
+            }
+
+            // Step 3: Calculate Determinants for Variables
+            const determinants = [];
+            for (let i = 0; i < n; i++) {
+                const Ai = JSON.parse(JSON.stringify(A)); // Deep copy of A
+                for (let j = 0; j < n; j++) {
+                    Ai[j][i] = B[j]; // Replace the ith column with B
+                }
+                determinants[i] = math.det(Ai);
+                resultDiv.innerHTML += `Step 2.${i + 1}: Determinant of A with column ${i + 1} replaced (|A${i + 1}|):<br>`;
+                resultDiv.innerHTML += `|A${i + 1}| = ${determinants[i].toFixed(2)}<br><br>`;
+            }
+
+            // Step 4: Calculate Variables
+            const solution = determinants.map(det => det / detA);
+            resultDiv.innerHTML += "Step 3: Solve for Variables (x = |Ai| / |A|):<br>";
+            solution.forEach((val, index) => {
+                resultDiv.innerHTML += `x${index + 1} = ${val.toFixed(2)}<br>`;
+            });
+
+            // Step 5: Display Final Answer
+            finalAnswersDiv.innerHTML = "Final Answers:<br>";
+            solution.forEach((val, index) => {
+                finalAnswersDiv.innerHTML += `x${index + 1} = ${val.toFixed(2)}<br>`;
+            });
+
+            resultDiv.style.display = 'block';
+            finalAnswersDiv.style.display = 'block';
+        }
+
+        function formatMatrix(matrix) {
+            return matrix.map(row => row.map(val => val.toFixed(2)).join(", ")).join("<br>");
+        }
+    </script>
+
+    <!-- Add Math.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.10.0/math.min.js"></script>
+</body>
+</html>
